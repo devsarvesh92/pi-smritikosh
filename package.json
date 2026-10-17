@@ -1,6 +1,6 @@
 {
   "name": "pi-smritikosh",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Semantic codebase exploration for pi via the smritikosh CLI — bundled, self-bootstrapping",
   "type": "module",
   "keywords": [
