@@ -1,0 +1,45 @@
+{
+  "name": "pi-smritikosh",
+  "version": "0.2.2",
+  "description": "Semantic codebase exploration for pi via the smritikosh CLI — bundled, self-bootstrapping",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-coding-agent",
+    "semantic-search",
+    "code-search",
+    "exploration"
+  ],
+  "license": "MIT",
+  "files": [
+    "index.ts",
+    "src",
+    "python"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "clean": "rm -rf python/build python/*.egg-info .venv",
+    "prepublishOnly": "rm -rf python/build python/*.egg-info && npm run typecheck",
+    "sync:smritikosh": "rsync -a --delete --exclude __pycache__ --exclude '*.egg-info' --exclude 'smritikosh.duckdb' \"${SMRITIKOSH_SRC:-../smritikosh}/smritikosh/\" python/smritikosh/ && cp \"${SMRITIKOSH_SRC:-../smritikosh}/pyproject.toml\" \"${SMRITIKOSH_SRC:-../smritikosh}/LICENSE\" python/"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.86.1",
+    "@earendil-works/pi-tui": "^0.80.10",
+    "@types/node": "^22.20.4",
+    "typebox": "^1.3.27",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}

@@ -1,0 +1,137 @@
+[project]
+name = "smritikosh"
+version = "0.3.0"
+description = "Semantic vector search over a codebase"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Shantanu Vashishtha", email = "vashishthashantanu3@gmail.com" },
+    { name = "Sarvesh Sawant", email = "sarveshdev92@gmail.com" },
+]
+keywords = [
+    "code-search",
+    "semantic-search",
+    "embeddings",
+    "tree-sitter",
+    "duckdb",
+    "vector-search",
+    "rag",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Text Processing :: Indexing",
+]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "click>=8.1",
+    "duckdb>=1.0",
+    # Vectors are handed to DuckDB as an Arrow FixedSizeListArray. Binding them
+    # as Python lists costs ~120 us per float, which made storing the vectors
+    # 75 % of an index run; Arrow is a contiguous buffer DuckDB ingests as-is.
+    "pyarrow>=15.0",
+    "numpy>=1.24",
+    # 1.0 renamed the gitignore pattern factory; "gitwildmatch" is deprecated.
+    "pathspec>=1.0",
+    # fastembed bundles ONNX Runtime — no PyTorch required, runs on any CPU.
+    "fastembed>=0.3",
+    "tree-sitter>=0.25",
+    # Pinned below 1.0: the 1.x line downloads grammar binaries at first use
+    # into a user cache. 0.x bundles all grammars in the wheel, so an install
+    # is deterministic, offline-safe, and covered by the lock file.
+    "tree-sitter-language-pack>=0.13,<1.0",
+    "truststore>=0.9",
+    "watchfiles>=0.21",
+    "toons>=0.7",
+    # Apple silicon installs its accelerated runtime automatically. Other
+    # platforms skip these dependencies and use the portable ONNX adapter.
+    "torch>=2.4 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "transformers>=4.40,<5 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sentence-transformers>=3.0 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "einops>=0.7 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+
+[project.scripts]
+smritikosh = "smritikosh.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/smritikosh/smritikosh"
+Repository = "https://github.com/smritikosh/smritikosh"
+Issues = "https://github.com/smritikosh/smritikosh/issues"
+
+# 77 is the first release that accepts the PEP 639 `license` expression and
+# `license-files` above; earlier versions want the old license classifier.
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["smritikosh*"]
+
+# The per-language directories under queries/ are plain data directories, not
+# packages, so packages.find does not reach them and the .scm files ship only
+# because of this glob. `make check-wheel` guards it.
+[tool.setuptools.package-data]
+"smritikosh.queries" = ["**/*.scm"]
+
+# ── Dev dependencies (PEP 735 — understood by both uv and Poetry 2.x) ─────────
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.0",
+    "pytest-cov>=6.0",
+    # Pinned exactly, and kept in step with .pre-commit-config.yaml: a
+    # formatter that drifts between the hook and CI reformats the tree on
+    # whichever one runs second.
+    "ruff==0.16.7",
+    "pre-commit>=4.6.2",
+    "duckdb>=1.0",
+]
+
+# Both Mac architectures are supported, so the lock file must carry a
+# resolution for each. uv otherwise resolves only for the machine that ran
+# `uv lock`, which silently drops the other one: an Intel-only lock pins
+# packages that lack macosx_x86_64 wheels (e.g. onnxruntime >= 1.24), while an
+# arm64-only lock is uninstallable on Intel. Listing both keeps each arch on
+# the newest version it has wheels for — currently onnxruntime 1.23.2 on
+# x86_64 and 1.29.0 on arm64.
+[tool.uv]
+required-environments = [
+    "sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# importlib mode lets test files share a basename across directories.
+addopts = "-v --import-mode=importlib"
+markers = ["slow: loads the real embedding model; skip with -m 'not slow'"]
+
+[tool.coverage.run]
+source = ["smritikosh"]
+
+[tool.coverage.report]
+# Raised from 75 % → 90 % alongside cli, storage, and embedder test suites.
+fail_under = 90
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "\\.\\.\\.",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "UP"]
